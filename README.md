@@ -1,45 +1,92 @@
 # ML Engineer: Autonomous AI Agent 🚀
 
-ML Engineer is a futuristic, autonomous assistant designed to automate the complete Machine Learning workflow. From researching SOTA papers to deploying trained models, it handles the heavy lifting so you can focus on high-level architecture.
+A complete, autonomous ML workflow automation tool.
 
-## 🌟 Key Features
+## Quick Overview
 
-- **Autonomous Research**: Search arXiv for the latest ML papers and get AI-ranked relevance scores.
-- **Data Lab**: Intelligent dataset ingestion with automatic statistical fingerprinting and analysis.
-- **AI Recommendation Engine**: Groq Llama 3 or Local Ollama powered algorithm suggestions with detailed reasoning.
-- **Automated Pipeline**: End-to-end preprocessing, training, tuning, and evaluation using `scikit-learn`.
-- **Insights Engine**: Professional, executive-level reports with performance charts and key observations.
-- **Hybrid LLM Support**: Choose between high-performance Groq Cloud or fully private Local Ollama.
+ML Engineer is a futuristic AI assistant that automates the entire ML pipeline from research to deployment.
 
-## 🚀 Quick Start (Production)
-
-The easiest way to run the full stack is using Docker Compose:
-
-```bash
-docker-compose up --build
-```
-
-Access the dashboard at `http://localhost`.
-
-## 🛠️ Configuration
-
-1. **API Keys**: Add your `GROQ_API_KEY` to `backend/.env`.
-2. **Local AI**: To use Ollama, toggle "Offline Mode" in the **System Config** tab.
-3. **Storage**: Experiments are persisted in a local SQLite database (`ml_engineer.db`).
-
-## 🏗️ Tech Stack
-
-- **Frontend**: React, Vite, Framer Motion, Lucide, Recharts.
-- **Backend**: FastAPI, Uvicorn, SQLite, WebSockets.
-- **AI/ML**: Groq Llama 3, Ollama, Scikit-learn, Pandas, NumPy.
-
-## 📦 Deployment
-
-The project is production-ready with:
-- **Persistence**: SQLite database for experiment tracking.
-- **Dockerization**: Multi-stage builds for optimized container sizes.
-- **Nginx**: Production-grade frontend serving.
-- **Environment Config**: Consistent API URL management via environment variables.
+**Important**: No random fallbacks - strictly uses your Groq API key for all AI features.
 
 ---
-Built with ❤️ for ML Engineers.
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Frontend (React)                     │
+│  - Futuristic UI with animations                        │
+│  - Paper Search, Data Lab, Model Engine, Insights      │
+└──────────────────────┬──────────────────────────────────┘
+                       │ HTTP & WebSockets
+┌──────────────────────▼──────────────────────────────────┐
+│                  Backend (FastAPI)                      │
+│  - File Uploads, WebSocket Streaming, Experiment Storage│
+└──────────────────────┬──────────────────────────────────┘
+                       │
+        ┌──────────────┴──────────────┐
+        │                              │
+┌───────▼───────┐             ┌──────▼───────┐
+│   LLM Engine  │             │  ML Pipeline  │
+│ - Groq Llama  │             │ - Scikit-learn│
+│ - Local Ollama│             │ - Preprocessing│
+└───────────────┘             └──────────────┘
+```
+
+---
+
+## What It Does
+
+1. **Research Papers**: Search arXiv and get AI-ranked results
+2. **Data Lab**: Auto-analyze your dataset (statistics, missing values, etc.)
+3. **AI Recommendation**: Get the best algorithm for your data with reasoning
+4. **Auto-Train**: One-click training with real-time updates
+5. **Insights**: Professional ML reports with charts and recommendations
+
+---
+
+## Get Started
+
+### 1. Add Your API Key
+
+Create a `.env` file in the **root directory**:
+
+```env
+GROQ_API_KEY=gsk_your_actual_key_here
+```
+
+### 2. Start the App
+
+```bash
+# Backend (Terminal 1)
+cd backend
+python -u main.py
+
+# Frontend (Terminal 2)
+cd frontend
+npm install
+npm run dev
+```
+
+### 3. Open the App
+
+Visit: **http://localhost:5173**
+
+---
+
+## Quick Test
+
+Use the sample dataset at `data/sample.csv` to experience the full workflow.
+
+---
+
+## Tech Stack
+
+- **Frontend**: React + Vite + Framer Motion
+- **Backend**: FastAPI + SQLite
+- **AI**: Groq Llama 3.3-70B / Local Ollama
+- **ML**: Scikit-learn + Pandas + NumPy
+
+---
+
+Built for ML Engineers who want to focus on ideas, not boilerplate.
