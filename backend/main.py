@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, WebSocket, BackgroundTasks, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import asyncio
@@ -27,7 +28,7 @@ app = FastAPI(title="ML-Agent", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -39,6 +40,10 @@ ml_engine = MLEngine()
 # UPLOAD DIRECTORY
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+# Mount static files (Frontend)
+if os.path.exists("static"):
+    app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 # WebSocket connections for real-time updates
 active_connections = []
@@ -349,4 +354,5 @@ async def train_model_task(experiment_id: str, request: TrainingRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 7860))
+    uvicorn.run(app, host="0.0.0.0", port=port)
