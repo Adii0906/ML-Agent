@@ -19,7 +19,13 @@ from models import (
     TrainingRequest, ExperimentResult
 )
 
-load_dotenv()
+# Load environment variables from root directory
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
+else:
+    load_dotenv()
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -221,75 +227,111 @@ async def get_report(experiment_id: str):
 
 @app.get("/experiments/{experiment_id}/export-report")
 async def export_report(experiment_id: str):
-    """Export experiment report as a downloadable file"""
+    """Export experiment report as a downloadable text file"""
     try:
         experiment = await ml_engine.get_experiment(experiment_id)
         if not experiment:
             raise HTTPException(status_code=404, detail="Experiment not found")
-        
+
         report = await ml_engine.generate_report(experiment_id)
-        
-        # Create a text-based report
-        report_content = f"""
-# ML-Agent: Autonomous ML Report
-=================================
-Experiment: {experiment['name']}
-Algorithm: {experiment['algorithm']}
-Date: {experiment['created_at']}
-Status: {experiment['status']}
+        m = experiment['metrics']
+        feat_imp = m.get('feature_importance', {})
+        feat_lines = ""
+        for f, imp in zip(feat_imp.get('features', [])[:10], feat_imp.get('importances', [])[:10]):
+            feat_lines += f"  {f}: {imp:.4f}\n"
 
-## Performance Metrics
-{json.dumps(experiment['metrics'], indent=4)}
+        report_content = f"""ML-AGENT: AUTONOMOUS ML REPORT
+{'='*60}
+Experiment : {experiment['name']}
+Algorithm  : {experiment['algorithm']}
+Date       : {experiment['created_at']}
+Status     : {experiment['status']}
+Train Time : {experiment['training_time']}s
 
-## Executive Summary
+{'='*60}
+DATASET SUMMARY
+{'='*60}
+Samples    : {m.get('n_samples','N/A')}
+Features   : {m.get('n_features','N/A')}
+Target     : {m.get('target_column','N/A')}
+Task Type  : {m.get('task_type','N/A')}
+Dataset Sz : {m.get('dataset_size_category','N/A')}
+Validation : {m.get('validation_strategy','N/A')}
+{('NOTE: ' + m['note']) if m.get('note') else ''}
+
+{'='*60}
+PERFORMANCE METRICS
+{'='*60}
+{json.dumps({k:v for k,v in m.items() if k not in ['feature_importance']}, indent=2)}
+
+{'='*60}
+FEATURE IMPORTANCE (Top 10)
+{'='*60}
+{feat_lines or 'Not available for this model type.'}
+
+{'='*60}
+EXECUTIVE SUMMARY
+{'='*60}
 {report.get('summary', 'N/A')}
 
-## Key Insights
-{chr(10).join(['- ' + i for i in report.get('insights', [])])}
+{'='*60}
+PREPROCESSING PIPELINE
+{'='*60}
+{report.get('preprocessing_summary', 'N/A')}
 
-## Next Steps
-{chr(10).join(['- ' + i for i in report.get('next_steps', [])])}
+{'='*60}
+KEY INSIGHTS
+{'='*60}
+{chr(10).join(['• ' + i for i in report.get('insights', [])])}
+
+{'='*60}
+AI RECOMMENDATION
+{'='*60}
+{report.get('recommendation', 'N/A')}
+
+{'='*60}
+NEXT STEPS
+{'='*60}
+{chr(10).join(['• ' + s for s in report.get('next_steps', [])])}
 """
-        
         file_path = f"report_{experiment_id}.txt"
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(report_content)
-            
+
+        safe_name = "".join(c if c.isalnum() or c in ('-','_') else '_' for c in experiment['name'])
         return StreamingResponse(
             open(file_path, "rb"),
             media_type="text/plain",
-            headers={"Content-Disposition": f"attachment; filename=ML-Agent_Report_{experiment['name']}.txt"}
+            headers={"Content-Disposition": f"attachment; filename=ML-Agent_Report_{safe_name}.txt"}
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error exporting report: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/experiments/{experiment_id}/export-model")
 async def export_model(experiment_id: str):
-    """Export trained model as a downloadable file"""
+    """Export trained model as a downloadable joblib file"""
     try:
         experiment = await ml_engine.get_experiment(experiment_id)
         if not experiment:
             raise HTTPException(status_code=404, detail="Experiment not found")
-            
-        # For this autonomous agent demo, we'll export the metadata and weights placeholder
-        model_data = {
-            "experiment_id": experiment_id,
-            "algorithm": experiment['algorithm'],
-            "metrics": experiment['metrics'],
-            "timestamp": datetime.now().isoformat(),
-            "status": "Production-Ready"
-        }
-        
-        file_path = f"model_{experiment_id}.json"
-        with open(file_path, "w") as f:
-            json.dump(model_data, f, indent=4)
-            
+        if experiment['status'] != 'completed':
+            raise HTTPException(status_code=400, detail=f"Experiment is not completed (status: {experiment['status']})")
+
+        file_path = f"model_{experiment_id}.joblib"
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Model file not found. The model may not have been saved correctly.")
+
+        safe_name = "".join(c if c.isalnum() or c in ('-','_') else '_' for c in experiment['name'])
         return StreamingResponse(
             open(file_path, "rb"),
-            media_type="application/json",
-            headers={"Content-Disposition": f"attachment; filename=ML-Agent_Model_{experiment['name']}.json"}
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f"attachment; filename=ML-Agent_{safe_name}.joblib"}
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error exporting model: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -354,5 +396,5 @@ async def train_model_task(experiment_id: str, request: TrainingRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 7860))
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
