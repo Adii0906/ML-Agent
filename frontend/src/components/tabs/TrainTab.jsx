@@ -17,17 +17,41 @@ function TrainTab({ fetchExperiments, sharedData }) {
   const [trainingProgress, setTrainingProgress] = useState(0);
   const [trainingMetrics, setTrainingMetrics] = useState({});
   const [currentStage, setCurrentStage] = useState('');
+  const [analysis, setAnalysis] = useState(null);
+  const [targetColumn, setTargetColumn] = useState('');
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   const WS_URL = API_URL.replace('http', 'ws');
 
   useEffect(() => {
-    if (sharedData?.filePath) setFilePath(sharedData.filePath);
+    if (sharedData?.filePath) {
+        setFilePath(sharedData.filePath);
+        fetchAnalysis(sharedData.filePath);
+    }
     if (sharedData?.recommendation) {
         setRecommendation(sharedData.recommendation);
         setStep(2);
     }
   }, [sharedData]);
+
+  const fetchAnalysis = async (path) => {
+    try {
+        const response = await fetch(`${API_URL}/analyze-dataset`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file_path: path, dataset_type: 'tabular' })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            setAnalysis(data.analysis);
+            setTargetColumn(data.analysis.target_column);
+            setTaskType(data.analysis.task_type);
+        }
+    } catch (err) {
+        console.error('Error analyzing dataset:', err);
+    }
+  };
 
   const handleInitialize = async (e) => {
     e.preventDefault();
@@ -59,7 +83,8 @@ function TrainTab({ fetchExperiments, sharedData }) {
           body: JSON.stringify({
             file_path: filePath,
             dataset_type: datasetType,
-            task_type: taskType
+            task_type: taskType,
+            target_column: targetColumn
           })
         });
         const data = await response.json();
@@ -91,7 +116,8 @@ function TrainTab({ fetchExperiments, sharedData }) {
           dataset_path: filePath,
           config: {
             dataset_type: datasetType,
-            task_type: taskType
+            task_type: taskType,
+            target_column: targetColumn
           },
           hyperparameters: recommendation.hyperparameters
         })
@@ -195,6 +221,51 @@ function TrainTab({ fetchExperiments, sharedData }) {
                 </div>
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>
+                    TARGET COLUMN
+                  </label>
+                  <select
+                    className="btn-secondary"
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
+                    value={targetColumn}
+                    onChange={(e) => setTargetColumn(e.target.value)}
+                  >
+                    {analysis?.column_names?.map(col => (
+                      <option key={col} value={col}>{col}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem', display: 'block' }}>
+                    TASK TYPE
+                  </label>
+                  <select
+                    className="btn-secondary"
+                    style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
+                    value={taskType}
+                    onChange={(e) => setTaskType(e.target.value)}
+                  >
+                    <option value="classification">Classification</option>
+                    <option value="regression">Regression</option>
+                  </select>
+                </div>
+              </div>
+
+              {analysis && (
+                <div style={{ padding: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Samples: {analysis.rows}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Duplicates: {analysis.duplicate_rows}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Features: {analysis.columns - 1}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Missing: {Object.values(analysis.missing_values).reduce((a, b) => a + b, 0)}</span>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.5rem', alignItems: 'end' }}>
                 <div className="form-group">
                   <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase' }}>
@@ -245,27 +316,29 @@ function TrainTab({ fetchExperiments, sharedData }) {
 
                 <div className="form-group">
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.75rem', display: 'block', textTransform: 'uppercase' }}>
-                      {isManual ? 'Target Algorithm' : 'Task Type'}
+                      {isManual ? 'Target Algorithm' : 'Task Status'}
                     </label>
                     <select
                         className="btn-secondary"
-                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none' }}
-                        value={isManual ? manualAlgorithm : taskType}
-                        onChange={(e) => isManual ? setManualAlgorithm(e.target.value) : setTaskType(e.target.value)}
+                        style={{ width: '100%', padding: '0.75rem', borderRadius: '12px', backgroundColor: 'var(--bg-tertiary)', color: 'white', border: '1px solid var(--border-color)', outline: 'none', opacity: isManual ? 1 : 0.6 }}
+                        value={isManual ? manualAlgorithm : 'ready'}
+                        disabled={!isManual}
+                        onChange={(e) => setManualAlgorithm(e.target.value)}
                     >
                         {isManual ? (
                           <>
                             <option>Random Forest</option>
                             <option>Gradient Boosting</option>
                             <option>Logistic Regression</option>
+                            <option>Linear Regression</option>
+                            <option>Decision Tree</option>
+                            <option>KNN</option>
+                            <option>SVM</option>
+                            <option>Naive Bayes</option>
                             <option>XGBoost</option>
-                            <option>Neural Network</option>
                           </>
                         ) : (
-                          <>
-                            <option value="classification">Classification</option>
-                            <option value="regression">Regression</option>
-                          </>
+                          <option value="ready">Ready to Optimize</option>
                         )}
                     </select>
                 </div>

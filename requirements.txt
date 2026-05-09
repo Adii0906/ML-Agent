@@ -10,3 +10,5 @@ websockets
 python-multipart
 scikit-learn
 pyarrow
+joblib
+xgboost
