@@ -15,8 +15,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
 
   useEffect(() => {
-    // Hide welcome screen after 3.5 seconds
-    const timer = setTimeout(() => setShowWelcome(false), 3500);
+    const timer = setTimeout(() => setShowWelcome(false), 4000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -44,6 +43,18 @@ function App() {
       setExperiments(data.experiments || []);
     } catch (error) {
       console.error('Error fetching experiments:', error);
+    }
+  };
+
+  const handleDeleteExperiment = async (experimentId) => {
+    try {
+      setExperiments(prev => prev.filter(exp => exp.id !== experimentId));
+      if (selectedExperiment?.id === experimentId) {
+        setSelectedExperiment(null);
+      }
+    } catch (error) {
+      console.error('Error deleting experiment:', error);
+      fetchExperiments();
     }
   };
 
@@ -132,7 +143,9 @@ function App() {
           experiments={experiments}
           selectedExperiment={selectedExperiment}
           setSelectedExperiment={setSelectedExperiment}
+          onDeleteExperiment={handleDeleteExperiment}
         />
+        
         <MainContent 
           activeTab={activeTab}
           experiments={experiments}

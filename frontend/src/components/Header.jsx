@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Cpu, Bell, User, Command } from 'lucide-react';
+import { Cpu, Github } from 'lucide-react';
 
 function Header() {
   return (
@@ -30,27 +30,36 @@ function Header() {
           your autonomous machine learning engineer
         </div>
         
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem', 
-          padding: '0.5rem 1rem', 
-          backgroundColor: 'var(--bg-tertiary)', 
-          borderRadius: '12px',
-          border: '1px solid var(--border-color)',
-          fontSize: '0.85rem',
-          color: 'var(--text-secondary)'
-        }}>
-          <Command size={14} />
-          <span>Quick Command</span>
-          <span style={{ 
-            backgroundColor: 'rgba(255,255,255,0.05)', 
-            padding: '2px 6px', 
-            borderRadius: '4px',
-            fontSize: '0.7rem',
-            marginLeft: '4px'
-          }}>K</span>
-        </div>
+        <a 
+          href="https://github.com/Adii0906/ML-Agent" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.5rem', 
+            padding: '0.5rem 1rem', 
+            backgroundColor: 'var(--bg-tertiary)', 
+            borderRadius: '12px',
+            border: '1px solid var(--border-color)',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)',
+            textDecoration: 'none',
+            transition: 'all 0.2s'
+          }}
+          className="btn btn-secondary"
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.08)';
+            e.currentTarget.style.borderColor = 'var(--accent-primary)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+            e.currentTarget.style.borderColor = 'var(--border-color)';
+          }}
+        >
+          <Github size={16} />
+          <span>Star on GitHub</span>
+        </a>
       </div>
     </header>
   );

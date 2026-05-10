@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Database, Zap, BarChart3, Settings, ChevronRight } from 'lucide-react';
+import { FileText, Database, Zap, BarChart3, Settings, ChevronRight, Trash2 } from 'lucide-react';
 
-function Sidebar({ activeTab, setActiveTab, experiments, selectedExperiment, setSelectedExperiment }) {
+function Sidebar({ activeTab, setActiveTab, experiments, selectedExperiment, setSelectedExperiment, onDeleteExperiment }) {
   const tabs = [
     { id: 'papers', label: 'Paper Search', icon: FileText },
     { id: 'dataset', label: 'Data Lab', icon: Database },
@@ -69,28 +69,61 @@ function Sidebar({ activeTab, setActiveTab, experiments, selectedExperiment, set
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 + index * 0.05 }}
                 className={`experiment-item ${selectedExperiment?.id === exp.id ? 'active' : ''}`}
-                onClick={() => {
-                  setSelectedExperiment(exp);
-                  setActiveTab('results');
-                }}
+                style={{ position: 'relative', paddingRight: '2.5rem' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{exp.name}</div>
-                  <ChevronRight size={14} opacity={0.5} />
+                <div 
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedExperiment(exp);
+                    setActiveTab('results');
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{exp.name}</div>
+                    <ChevronRight size={14} opacity={0.5} />
+                  </div>
+                  <div className="experiment-status">
+                    <span style={{ 
+                      display: 'inline-block', 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      backgroundColor: exp.status === 'completed' ? 'var(--success)' : 'var(--warning)',
+                      marginRight: 6
+                    }} />
+                    {exp.algorithm}
+                  </div>
                 </div>
-                <div className="experiment-status">
-                  <span style={{ 
-                    display: 'inline-block', 
-                    width: 6, 
-                    height: 6, 
-                    borderRadius: '50%', 
-                    backgroundColor: exp.status === 'completed' ? 'var(--success)' : 'var(--warning)',
-                    marginRight: 6
-                  }} />
-                  {exp.algorithm}
-                </div>
+                
+                <motion.button
+                  whileHover={{ scale: 1.1, color: 'var(--error)' }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDeleteExperiment) {
+                      onDeleteExperiment(exp.id);
+                    }
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--text-secondary)',
+                    padding: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Trash2 size={14} />
+                </motion.button>
               </motion.div>
             ))
           )}
