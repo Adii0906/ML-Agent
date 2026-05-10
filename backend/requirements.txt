@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pandas
+numpy
+groq
+arxiv
+python-dotenv
+pydantic
+websockets
+python-multipart
+scikit-learn
+pyarrow
+joblib
+xgboost

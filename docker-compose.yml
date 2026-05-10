@@ -9,7 +9,7 @@ services:
       - ./backend/uploads:/app/uploads
       - ./backend/ml_engineer.db:/app/ml_engineer.db
     env_file:
-      - ./backend/.env
+      - ./.env
     restart: always
 
   frontend:
