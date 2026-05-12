@@ -112,6 +112,48 @@ async def search_papers(query: str, limit: int = 5):
         logger.error(f"Error searching papers: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/get-dataset-preview")
+async def get_dataset_preview(file_path: str, rows: int = 20):
+    """Get dataset preview as a table for display"""
+    import pandas as pd
+    try:
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        encodings = ['utf-8', 'latin1', 'utf-16']
+        df = None
+        
+        for encoding in encodings:
+            try:
+                if file_path.endswith('.csv'):
+                    df = pd.read_csv(file_path, encoding=encoding, nrows=rows * 2)
+                elif file_path.endswith('.parquet'):
+                    df = pd.read_parquet(file_path)
+                    df = df.head(rows * 2)
+                break
+            except:
+                continue
+        
+        if df is None:
+            raise HTTPException(status_code=400, detail="Could not read file with any supported encoding")
+        
+        # Get first N rows and convert to JSON
+        preview = df.head(rows).to_dict(orient='records')
+        columns = list(df.columns)
+        dtypes = {col: str(df[col].dtype) for col in columns}
+        
+        return {
+            "status": "success",
+            "columns": columns,
+            "dtypes": dtypes,
+            "data": preview,
+            "total_rows": len(df)
+        }
+    except Exception as e:
+        logger.error(f"Error getting dataset preview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/analyze-dataset")
 async def analyze_dataset(request: DatasetRequest):
     """Analyze dataset and get basic statistics"""
