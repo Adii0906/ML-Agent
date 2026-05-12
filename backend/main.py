@@ -251,7 +251,26 @@ async def get_experiment(experiment_id: str):
             "status": "success",
             "experiment": experiment
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/experiments/{experiment_id}")
+async def delete_experiment(experiment_id: str):
+    """Delete an experiment permanently"""
+    try:
+        deleted = await ml_engine.delete_experiment(experiment_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+        return {
+            "status": "success",
+            "message": "Experiment deleted"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting experiment: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/experiments/{experiment_id}/report")

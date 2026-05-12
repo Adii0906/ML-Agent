@@ -632,6 +632,12 @@ Be specific, practical, and futuristic in your reasoning."""
                 return exp
         return None
 
+    async def delete_experiment(self, experiment_id: str) -> bool:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("DELETE FROM experiments WHERE id = ?", (experiment_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
     async def get_all_experiments(self) -> List[Dict]:
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
