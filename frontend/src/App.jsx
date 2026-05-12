@@ -48,10 +48,27 @@ function App() {
 
   const handleDeleteExperiment = async (experimentId) => {
     try {
+      const response = await fetch(`${API_URL}/experiments/${experimentId}`, {
+        method: 'DELETE'
+      });
+
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok && response.status !== 404) {
+        throw new Error(data.detail || 'Failed to delete experiment');
+      }
+
       setExperiments(prev => prev.filter(exp => exp.id !== experimentId));
       if (selectedExperiment?.id === experimentId) {
         setSelectedExperiment(null);
       }
+
+      await fetchExperiments();
     } catch (error) {
       console.error('Error deleting experiment:', error);
       fetchExperiments();
@@ -162,30 +179,34 @@ function App() {
                 </span>
               </div>
 
-              <h1 style={{ 
-                fontSize: '5.5rem', 
-                fontWeight: 900, 
-                letterSpacing: '-0.05em',
-                background: 'linear-gradient(to bottom, #ffffff 30%, #c7d2fe 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                marginBottom: '0.75rem',
-                lineHeight: 1,
-                filter: 'drop-shadow(0 0 30px rgba(99, 102, 241, 0.3))'
-              }}>
+              <motion.h1
+                animate={{ y: [0, -2, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ 
+                  fontSize: 'clamp(3rem, 10vw, 5.5rem)', 
+                  fontWeight: 900, 
+                  letterSpacing: '-0.04em',
+                  background: 'linear-gradient(to bottom, #ffffff 35%, #c7d2fe 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  marginBottom: '0.9rem',
+                  lineHeight: 1,
+                  filter: 'drop-shadow(0 0 20px rgba(99, 102, 241, 0.35))'
+                }}
+              >
                 ML-Agent
-              </h1>
+              </motion.h1>
               <p style={{ 
                 color: 'var(--text-primary)', 
-                fontSize: '1.4rem', 
+                fontSize: '1.1rem', 
                 letterSpacing: '0.01em', 
-                maxWidth: '700px', 
+                maxWidth: '820px', 
                 margin: '0 auto 2.5rem', 
-                lineHeight: 1.6,
+                lineHeight: 1.7,
                 fontWeight: 500,
-                opacity: 0.9
+                opacity: 0.95
               }}>
-                an autonomous ML engineer designed to save your time
+                an autonomous ML engineer that analyzes data, researches papers, trains models, and ships ML workflows
               </p>
             </motion.div>
 

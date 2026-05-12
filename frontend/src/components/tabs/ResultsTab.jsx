@@ -309,7 +309,7 @@ function ResultsTab({ experiment }) {
         </ChartCard>
 
         {/* Performance Radar */}
-        <ChartCard title="Performance Overview" icon={RadarChart} color="#8b5cf6">
+        <ChartCard title="Performance Overview" icon={Target} color="#8b5cf6">
           <div style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
@@ -362,7 +362,7 @@ function ResultsTab({ experiment }) {
             </div>
           </ChartCard>
         ) : (
-          <ChartCard title="Prediction Trend" icon={LineChart} color="#6366f1">
+          <ChartCard title="Prediction Trend" icon={TrendingUp} color="#6366f1">
             <div style={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={[

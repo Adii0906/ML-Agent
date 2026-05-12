@@ -62,10 +62,37 @@ function DatasetTab() {
       });
       const data = await response.json();
       if (data.status === 'success') {
-        setDatasetPreview(data);
+        const safeData = Array.isArray(data.data) ? data.data : [];
+        const inferredColumns = safeData.length > 0 && typeof safeData[0] === 'object'
+          ? Object.keys(safeData[0])
+          : [];
+        const safeColumns = Array.isArray(data.columns) && data.columns.length > 0
+          ? data.columns
+          : inferredColumns;
+        const safeDtypes = data.dtypes && typeof data.dtypes === 'object' ? data.dtypes : {};
+        const safeTotalRows = Number.isFinite(data.total_rows) ? data.total_rows : safeData.length;
+
+        if (safeColumns.length === 0 && safeData.length === 0) {
+          setError('Preview is empty or malformed. Please verify dataset format.');
+          setDatasetPreview(null);
+          return;
+        }
+
+        setDatasetPreview({
+          status: 'success',
+          columns: safeColumns,
+          dtypes: safeDtypes,
+          data: safeData,
+          total_rows: safeTotalRows
+        });
+      } else {
+        setError('Failed to load dataset preview: ' + (data.detail || 'Invalid response'));
+        setDatasetPreview(null);
       }
     } catch (err) {
       console.error('Failed to load dataset preview:', err);
+      setError('Failed to load dataset preview: ' + err.message);
+      setDatasetPreview(null);
     } finally {
       setPreviewLoading(false);
     }
@@ -123,10 +150,22 @@ function DatasetTab() {
     }
   };
 
+  const getMissingValuesCount = (missingValues) => {
+    if (typeof missingValues === 'number') return missingValues;
+    if (missingValues && typeof missingValues === 'object') {
+      return Object.values(missingValues).reduce(
+        (sum, value) => sum + (typeof value === 'number' ? value : 0),
+        0
+      );
+    }
+    return 0;
+  };
+
   const proceedToTraining = () => {
     window.dispatchEvent(new CustomEvent('changeTab', {
       detail: {
         tab: 'train',
+        filePath: filePath,
         dataset_path: filePath,
         dataset_name: file?.name,
         analysis: analysis,
@@ -327,10 +366,10 @@ function DatasetTab() {
       )}
 
       {/* Analysis & Recommendation */}
-      {(analysis || recommendation) && (
+      {((analysis && typeof analysis === 'object' && !Array.isArray(analysis)) || recommendation) && (
         <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
           {/* Analysis Card */}
-          {analysis && (
+          {analysis && typeof analysis === 'object' && !Array.isArray(analysis) && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -351,7 +390,13 @@ function DatasetTab() {
                   backgroundColor: 'rgba(255,255,255,0.03)'
                 }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Samples</span>
-                  <span style={{ fontWeight: 700 }}>{analysis.n_samples?.toLocaleString() || 'N/A'}</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {typeof analysis.n_samples === 'number'
+                      ? analysis.n_samples.toLocaleString()
+                      : typeof analysis.rows === 'number'
+                        ? analysis.rows.toLocaleString()
+                        : 'N/A'}
+                  </span>
                 </div>
                 <div style={{ 
                   display: 'flex', 
@@ -361,7 +406,15 @@ function DatasetTab() {
                   backgroundColor: 'rgba(255,255,255,0.03)'
                 }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Features</span>
-                  <span style={{ fontWeight: 700 }}>{analysis.n_features || 'N/A'}</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {typeof analysis.n_features === 'number'
+                      ? analysis.n_features
+                      : typeof analysis.columns === 'number'
+                        ? analysis.columns
+                        : Array.isArray(analysis.column_names)
+                          ? analysis.column_names.length
+                          : 'N/A'}
+                  </span>
                 </div>
                 <div style={{ 
                   display: 'flex', 
@@ -371,7 +424,13 @@ function DatasetTab() {
                   backgroundColor: 'rgba(255,255,255,0.03)'
                 }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Numeric Cols</span>
-                  <span style={{ fontWeight: 700 }}>{analysis.numeric_columns || 'N/A'}</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {typeof analysis.numeric_columns === 'number'
+                      ? analysis.numeric_columns
+                      : Array.isArray(analysis.numeric_features)
+                        ? analysis.numeric_features.length
+                        : 'N/A'}
+                  </span>
                 </div>
                 <div style={{ 
                   display: 'flex', 
@@ -383,9 +442,9 @@ function DatasetTab() {
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Missing Values</span>
                   <span style={{ 
                     fontWeight: 700, 
-                    color: (analysis.missing_values || 0) > 0 ? '#f59e0b' : '#10b981'
+                    color: getMissingValuesCount(analysis.missing_values) > 0 ? '#f59e0b' : '#10b981'
                   }}>
-                    {analysis.missing_values || 0}
+                    {getMissingValuesCount(analysis.missing_values)}
                   </span>
                 </div>
               </div>

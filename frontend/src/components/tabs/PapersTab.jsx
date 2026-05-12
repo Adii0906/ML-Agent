@@ -86,11 +86,22 @@ function PapersTab() {
             onChange={(e) => setQuery(e.target.value)}
           />
           <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
             type="submit"
             className="btn btn-primary"
-            style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', padding: '0.6rem 1.5rem' }}
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              height: '40px',
+              minWidth: '108px',
+              padding: '0 1rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
             disabled={loading}
           >
             {loading ? <Loader size={18} className="loader" /> : 'Search'}
